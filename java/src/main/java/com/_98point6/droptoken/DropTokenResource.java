@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  */
 
 // TODO: check that wrong variables e.g. a integer or array for a string returns a 400
+// TODO: add response entities that describe the error to user
 @Path("/drop_token")
 @Produces(MediaType.APPLICATION_JSON)
 public class DropTokenResource {
@@ -54,6 +55,7 @@ public class DropTokenResource {
         try {
             request = createGameRequestValidator.validate(request);
         } catch (InvalidRequestException e) {
+            // TODO: add response entities that describe the error to user
             return Response.status(400).build();
         }
 
@@ -97,7 +99,7 @@ public class DropTokenResource {
         try {
             int moveId = game.addMove(move);
             PostMoveResponse response = new PostMoveResponse.Builder()
-                    .moveLink(String.valueOf(moveId))
+                    .move(String.format("%s/moves/%s", gameId, moveId))
                     .build();
 
             return Response.ok(response).build();
@@ -171,11 +173,7 @@ public class DropTokenResource {
 
 
     public static void main(String[] args) {
-        ArrayList<String> foo = new ArrayList<>();
-        foo.add("0th");
-        System.out.println(foo.get(-2));
-        for (String i : foo.subList(1, 1)) {
-            System.out.println(i);
-        }
+        String foo = String.format("%s/moves/%s", "foo", 5);
+        System.out.println(foo);
     }
 }

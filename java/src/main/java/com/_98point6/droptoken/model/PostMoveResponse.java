@@ -7,35 +7,35 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  */
 public class PostMoveResponse {
-    private String moveLink;
+    private String move;
 
     public PostMoveResponse() {}
 
     private PostMoveResponse(Builder builder) {
-        this.moveLink = Preconditions.checkNotNull(builder.moveLink);
+        this.move = Preconditions.checkNotNull(builder.move);
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("moveLink", moveLink)
+                .append("move", move)
                 .toString();
     }
 
-    public String getMoveLink() {
-        return moveLink;
+    public String getMove() {
+        return move;
     }
 
     public static class Builder {
-        private String moveLink;
+        private String move;
 
-        public Builder moveLink(String moveLink) {
-            this.moveLink = moveLink;
+        public Builder move(String move) {
+            this.move = move;
             return this;
         }
 
         public Builder fromPrototype(PostMoveResponse prototype) {
-            moveLink = prototype.moveLink;
+            move = prototype.move;
             return this;
         }
 

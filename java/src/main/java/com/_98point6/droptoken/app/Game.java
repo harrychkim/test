@@ -19,7 +19,6 @@ public class Game {
     private ArrayList<GetMoveResponse> moves = new ArrayList<>();
     private final int winningLength;
     private String id;
-    // GENERALIZE: if we have more than players, we need a pointer that stores order
     private List<String> players;
     private List<String> playerOrder;
     private int orderPointer;
