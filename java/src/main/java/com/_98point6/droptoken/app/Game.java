@@ -39,7 +39,9 @@ public class Game {
     public int addMove(GetMoveResponse nextMove) {
         String player = nextMove.getPlayer();
         String type = nextMove.getType();
-        int column = nextMove.getColumn().get();
+        int column = nextMove.getColumn().isPresent()
+                ? nextMove.getColumn().get()
+                : -1;
 
         if (isDone()) {
             throw new GameStatusException();
@@ -65,7 +67,7 @@ public class Game {
         orderPointer++;
         orderPointer = orderPointer % playerOrder.size();
         moves.add(nextMove);
-        return ++boardMoves;
+        return boardMoves++;
     }
 
     public List<String> getPlayers() {
