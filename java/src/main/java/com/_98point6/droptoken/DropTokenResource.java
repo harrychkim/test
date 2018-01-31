@@ -77,6 +77,7 @@ public class DropTokenResource {
         GameStatusResponse response = new GameStatusResponse.Builder()
                 .players(game.getPlayers())
                 .state(game.isDone() ? DONE : IN_PROGRESS)
+                .winner(game.getWinner())
                 .build();
         // TODO - check if null winner is printed out to the user
         return Response.ok(response).build();
