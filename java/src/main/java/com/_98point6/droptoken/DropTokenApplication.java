@@ -28,8 +28,7 @@ public class DropTokenApplication extends Application<DropTokenConfiguration> {
         }
 
         @Override
-        public void run(DropTokenConfiguration configuration,
-                Environment environment) {
+        public void run(DropTokenConfiguration configuration, Environment environment) {
             environment.getObjectMapper()
                     .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                     .registerModule(new Jdk8Module());
@@ -40,7 +39,7 @@ public class DropTokenApplication extends Application<DropTokenConfiguration> {
             environment.jersey().register(new JsonProcessingExceptionMapper());
             environment.jersey().register(new EarlyEofExceptionMapper());
 
-            final DropTokenResource resource = new DropTokenResource();
+            final DropTokenResource resource = new DropTokenResource(configuration);
             environment.jersey().register(resource);
 
         }

@@ -1,80 +1,181 @@
 package com._98point6.droptoken;
 
-import com._98point6.droptoken.model.CreateGameRequest;
-import com._98point6.droptoken.model.CreateGameResponse;
-import com._98point6.droptoken.model.GameStatusResponse;
-import com._98point6.droptoken.model.GetGamesResponse;
-import com._98point6.droptoken.model.GetMoveResponse;
-import com._98point6.droptoken.model.GetMovesResponse;
-import com._98point6.droptoken.model.PostMoveRequest;
-import com._98point6.droptoken.model.PostMoveResponse;
+import com._98point6.droptoken.app.Game;
+import com._98point6.droptoken.exceptions.*;
+import com._98point6.droptoken.model.*;
+import com._98point6.droptoken.model.Validators.CreateGameRequestValidator;
+import com._98point6.droptoken.model.Validators.Validator;
+import com._98point6.droptoken.store.GamesDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
  */
+
+// TODO: check that wrong variables e.g. a integer or array for a string returns a 400
 @Path("/drop_token")
 @Produces(MediaType.APPLICATION_JSON)
 public class DropTokenResource {
+    private static final String DONE = "DONE";
+    private static final String IN_PROGRESS = "IN_PROGRESS";
+    private static final String QUIT = "QUIT";
+    private static final String MOVE = "MOVE";
     private static final Logger logger = LoggerFactory.getLogger(DropTokenResource.class);
+    private final DropTokenConfiguration configuration;
+    private final Validator<CreateGameRequest> createGameRequestValidator;
+    private GamesDB database;
 
-    public DropTokenResource() {
+    public DropTokenResource(DropTokenConfiguration configuration) {
+        this.database = new GamesDB();
+        this.configuration = configuration;
+        this.createGameRequestValidator = new CreateGameRequestValidator(configuration);
     }
 
     @GET
     public Response getGames() {
-        return Response.ok(new GetGamesResponse()).build();
+        List<Game> games = this.database.getActiveGames();
+        GetGamesResponse response = new GetGamesResponse.Builder()
+                .games(games.stream().map(Game::getId).collect(Collectors.toList()))
+                .build();
+        return Response.ok(response).build();
     }
 
     @POST
     public Response createNewGame(CreateGameRequest request) {
         logger.info("request={}", request);
-        return Response.ok(new CreateGameResponse()).build();
+        try {
+            request = createGameRequestValidator.validate(request);
+        } catch (InvalidRequestException e) {
+            return Response.status(400).build();
+        }
+
+        Game newGame = this.database.createGame(request, configuration);
+        CreateGameResponse response = new CreateGameResponse.Builder()
+                .gameId(newGame.getId())
+                .build();
+        return Response.ok(response).build();
     }
 
     @Path("/{id}")
     @GET
     public Response getGameStatus(@PathParam("id") String gameId) {
         logger.info("gameId = {}", gameId);
-        return Response.ok(new GameStatusResponse()).build();
+        Game game = this.database.getGame(gameId);
+        if (game == null) {
+            return Response.status(404).build();
+        }
+        GameStatusResponse response = new GameStatusResponse.Builder()
+                .players(game.getPlayers())
+                .state(game.isDone() ? DONE : IN_PROGRESS)
+                .build();
+        // TODO - check if null winner is printed out to the user
+        return Response.ok(response).build();
     }
 
     @Path("/{id}/{playerId}")
     @POST
     public Response postMove(@PathParam("id")String gameId, @PathParam("playerId") String playerId, PostMoveRequest request) {
         logger.info("gameId={}, playerId={}, move={}", gameId, playerId, request);
-        return Response.ok(new PostMoveResponse()).build();
+        Game game = this.database.getGame(gameId);
+        if (game == null || !game.getPlayers().contains(playerId)) {
+            return Response.status(404).build();
+        }
+
+        GetMoveResponse move = new GetMoveResponse.Builder()
+                .player(playerId)
+                .type(MOVE)
+                .column(request.getColumn())
+                .build();
+        try {
+            int moveId = game.addMove(move);
+            PostMoveResponse response = new PostMoveResponse.Builder()
+                    .moveLink(String.valueOf(moveId))
+                    .build();
+
+            return Response.ok(response).build();
+        } catch (IllegalMoveException e) {
+            return Response.status(400).build();
+        } catch (OutOfTurnException e) {
+            return Response.status(409).build();
+        } catch (InvalidMoveException e) {
+            return Response.status(404).build();
+        }
     }
 
     @Path("/{id}/{playerId}")
     @DELETE
     public Response playerQuit(@PathParam("id")String gameId, @PathParam("playerId") String playerId) {
         logger.info("gameId={}, playerId={}", gameId, playerId);
-        return Response.status(202).build();
+        Game game = this.database.getGame(gameId);
+        if (game == null || !game.getPlayers().contains(playerId)) {
+            return Response.status(404).build();
+        }
+
+        GetMoveResponse quitMove = new GetMoveResponse.Builder()
+                .type(QUIT)
+                .player(playerId)
+                .build();
+        try {
+            game.addMove(quitMove);
+            return Response.status(202).build();
+        } catch (GameStatusException e) {
+            return Response.status(410).build();
+        } catch (GameAccessException e) {
+            return Response.status(404).build();
+        }
     }
+
     @Path("/{id}/moves")
     @GET
     public Response getMoves(@PathParam("id") String gameId, @QueryParam("start") Integer start, @QueryParam("until") Integer until) {
         logger.info("gameId={}, start={}, until={}", gameId, start, until);
-        return Response.ok(new GetMovesResponse()).build();
+        Game game = this.database.getGame(gameId);
+        if (game == null) {
+            return Response.status(404).build();
+        }
+        List<GetMoveResponse> moves = game.getMoves();
+        // TODO: ask if movesSubset being null should return 404 (if start > 0)
+        GetMovesResponse response = new GetMovesResponse.Builder()
+                .moves(moves.subList(start, until))
+                .build();
+
+        return Response.ok(response).build();
     }
 
     @Path("/{id}/moves/{moveId}")
     @GET
     public Response getMove(@PathParam("id") String gameId, @PathParam("moveId") Integer moveId) {
         logger.info("gameId={}, moveId={}", gameId, moveId);
-        return Response.ok(new GetMoveResponse()).build();
+        if (moveId < 0) {
+            return Response.status(400).build();
+        }
+        Game game = this.database.getGame(gameId);
+        if (game == null) {
+            return Response.status(404).build();
+        }
+        try {
+            GetMoveResponse response = game.getMoves().get(moveId);
+            return Response.ok(response).build();
+        } catch (IndexOutOfBoundsException e) {
+            return Response.status(404).build();
+        }
     }
 
+
+    public static void main(String[] args) {
+        ArrayList<String> foo = new ArrayList<>();
+        foo.add("0th");
+        System.out.println(foo.get(-2));
+        for (String i : foo.subList(1, 1)) {
+            System.out.println(i);
+        }
+    }
 }

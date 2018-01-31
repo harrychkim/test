@@ -1,6 +1,8 @@
 # Configuration file.
 # You can add any fields you need, be sure to update DropTokenConfiguration accordingly.
 template: some-crazy text
+winningLength: 4
+allowedPlayers: 2
 
 logging:
   level: INFO

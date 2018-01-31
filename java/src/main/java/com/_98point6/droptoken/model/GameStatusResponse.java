@@ -10,7 +10,7 @@ import java.util.Optional;
  */
 public class GameStatusResponse {
     private List<String> players;
-    private Integer moves;
+//    private Integer moves;
     private String winner;
     private String state;
 
@@ -18,7 +18,7 @@ public class GameStatusResponse {
 
     private GameStatusResponse(Builder builder) {
         this.players = Preconditions.checkNotNull(builder.players);
-        this.moves = Preconditions.checkNotNull(builder.moves);
+//        this.moves = Preconditions.checkNotNull(builder.moves);
         this.winner = builder.winner;
         this.state = Preconditions.checkNotNull(builder.state);
     }
@@ -27,12 +27,15 @@ public class GameStatusResponse {
         return players;
     }
 
-    public Integer getMoves() {
-        return moves;
-    }
+//    public Integer getMoves() {
+//        return moves;
+//    }
 
     public Optional<String> getWinner() {
-        return Optional.ofNullable(winner);
+        if (getState().equals("DONE")) {
+            return Optional.ofNullable(winner);
+        }
+        return null;
     }
 
     public String getState() {
@@ -41,7 +44,7 @@ public class GameStatusResponse {
 
     public static class Builder {
         private List<String> players;
-        private Integer moves;
+//        private Integer moves;
         private String winner;
         private String state;
 
@@ -50,10 +53,10 @@ public class GameStatusResponse {
             return this;
         }
 
-        public Builder moves(Integer moves) {
-            this.moves = moves;
-            return this;
-        }
+//        public Builder moves(Integer moves) {
+//            this.moves = moves;
+//            return this;
+//        }
 
         public Builder winner(String winner) {
             this.winner = winner;
@@ -67,7 +70,7 @@ public class GameStatusResponse {
 
         public Builder fromPrototype(GameStatusResponse prototype) {
             players = prototype.players;
-            moves = prototype.moves;
+//            moves = prototype.moves;
             winner = prototype.winner;
             state = prototype.state;
             return this;
