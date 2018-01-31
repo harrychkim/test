@@ -83,6 +83,9 @@ public class Game {
     }
 
     public String getWinner() {
+        if (playerOrder.size() == 1) {
+            return playerOrder.get(0);
+        }
         return winner;
     }
 
