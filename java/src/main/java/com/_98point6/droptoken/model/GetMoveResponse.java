@@ -25,8 +25,8 @@ public class GetMoveResponse {
         return player;
     }
 
-    public Optional<Integer> getColumn() {
-        return Optional.ofNullable(column);
+    public Integer getColumn() {
+        return column;
     }
 
     public static class Builder {

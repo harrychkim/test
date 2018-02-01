@@ -39,9 +39,7 @@ public class Game {
     public int addMove(GetMoveResponse nextMove) {
         String player = nextMove.getPlayer();
         String type = nextMove.getType();
-        int column = nextMove.getColumn().isPresent()
-                ? nextMove.getColumn().get()
-                : -1;
+        Integer column = nextMove.getColumn();
 
         if (isDone()) {
             throw new GameStatusException();
