@@ -3,8 +3,6 @@ package com._98point6.droptoken;
 import com._98point6.droptoken.app.Game;
 import com._98point6.droptoken.exceptions.*;
 import com._98point6.droptoken.model.*;
-import com._98point6.droptoken.model.Validators.CreateGameRequestValidator;
-import com._98point6.droptoken.model.Validators.Validator;
 import com._98point6.droptoken.store.GamesDB;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,13 +29,11 @@ public class DropTokenResource {
     private static final String MOVE = "MOVE";
     private static final Logger logger = LoggerFactory.getLogger(DropTokenResource.class);
     private final DropTokenConfiguration configuration;
-    private final Validator<CreateGameRequest> createGameRequestValidator;
     private GamesDB database;
 
     public DropTokenResource(DropTokenConfiguration configuration) {
         this.database = new GamesDB();
         this.configuration = configuration;
-        this.createGameRequestValidator = new CreateGameRequestValidator(configuration);
     }
 
     @GET
@@ -53,7 +49,7 @@ public class DropTokenResource {
     public Response createNewGame(CreateGameRequest request) {
         logger.info("request={}", request);
         try {
-            request = createGameRequestValidator.validate(request);
+            request.validate(configuration.getWinningLength(), configuration.getAllowedPlayers());
         } catch (InvalidRequestException e) {
             // TODO: add response entities that describe the error to user
             return Response.status(400).build();
@@ -145,12 +141,18 @@ public class DropTokenResource {
             return Response.status(404).build();
         }
         List<GetMoveResponse> moves = game.getMoves();
-        // TODO: ask if movesSubset being null should return 404 (if start > 0)
-        GetMovesResponse response = new GetMovesResponse.Builder()
-                .moves(moves.subList(start, until))
-                .build();
+        start = start == null ? 0 : start;
+        until = until == null ? moves.size() : until;
 
-        return Response.ok(response).build();
+        // TODO: ask if movesSubset being empty should return 404 (if start > 0)
+        try {
+            GetMovesResponse response = new GetMovesResponse.Builder()
+                    .moves(moves.subList(start, until))
+                    .build();
+            return Response.ok(response).build();
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
+            return Response.status(400).build();
+        }
     }
 
     @Path("/{id}/moves/{moveId}")
@@ -174,7 +176,9 @@ public class DropTokenResource {
 
 
     public static void main(String[] args) {
-        String foo = String.format("%s/moves/%s", "foo", 5);
-        System.out.println(foo);
+        List<String> foo = Arrays.asList("foo", "bar");
+        for (String s : foo.subList(-1, 2)) {
+            System.out.println(s);
+        }
     }
 }

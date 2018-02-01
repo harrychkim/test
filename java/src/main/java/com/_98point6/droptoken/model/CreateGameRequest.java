@@ -1,5 +1,6 @@
 package com._98point6.droptoken.model;
 
+import com._98point6.droptoken.exceptions.CreateGameException;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -73,5 +74,19 @@ public class CreateGameRequest {
         public CreateGameRequest build() {
             return new CreateGameRequest(this);
         }
+    }
+
+    public void validate(int winningLength, int playersAllowed) {
+        if (players.size() != playersAllowed) {
+            throw new CreateGameException();
+        }
+
+        if (columns != 4 || rows != 4) {
+            throw new CreateGameException();
+        }
+
+//        if (columns < winningLength || rows < winningLength) {
+//            throw new CreateGameException();
+//        }
     }
 }

@@ -111,6 +111,7 @@ public class Game {
         throw new IllegalMoveException("column has no available rows");
     }
 
+/* Methods from here and below are for determining whether the board has a winner */
     private void checkWinner(int column, int row) {
         String player = this.board[column][row];
         if (checkNS(column, row) || checkEW(column, row) || checkPosDiag(column, row) || checkNegDiag(column, row)) {
@@ -134,7 +135,6 @@ public class Game {
         return 1+ checkDirection(column, row, 1, -1) + checkDirection(column, row, -1, 1) >= winningLength;
     }
 
-    // TODO make column and row direction an Enum with values -1, 0, and 1
     private int checkDirection(int columnStart, int rowStart, int columnDirection, int rowDirection) {
         String player = this.board[columnStart][rowStart];
         int nextColumn = columnStart;
