@@ -2,3 +2,5 @@
 java/9dt-backend.iml
 target
 dependency-reduced-pom.xml
+tests/.idea/
+tests/venv
